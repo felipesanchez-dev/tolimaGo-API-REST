@@ -20,6 +20,7 @@ import {
   requestSizeLimit,
   securityLogger,
   corsConfig,
+  reactNativeCorsHandler,
 } from './core/middleware/security';
 import { authRoutes } from './modules/auth/routes/auth.routes';
 import { userRoutes } from './modules/users/routes';
@@ -55,9 +56,17 @@ class App {
   }
 
   private initializeMiddlewares(): void {
-    // Security middlewares (should be first)
-    this.app.use(securityHeaders);
+    // React Native specific CORS handler - Must be first
+    this.app.use(reactNativeCorsHandler);
+
+    // Standard CORS middleware
     this.app.use(cors(corsConfig));
+
+    // Handle preflight requests explicitly
+    this.app.options('*', cors(corsConfig));
+
+    // Security middlewares (relaxed for development)
+    this.app.use(securityHeaders);
     this.app.use(securityLogger);
     this.app.use(standardRateLimiter);
     this.app.use(sanitizeInput);
@@ -114,7 +123,7 @@ class App {
 
     // Authentication routes
     this.app.use('/api/v1/auth', authRoutes);
-    
+
     // User routes
     this.app.use('/api/v1/users', userRoutes);
     // this.app.use('/api/v1/plans', planRoutes);

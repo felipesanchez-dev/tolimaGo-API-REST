@@ -5,22 +5,68 @@ import { Request, Response, NextFunction } from 'express';
 import { config } from '../config';
 import { logger } from '../config/logger';
 
+// Additional CORS middleware for React Native compatibility
+export const reactNativeCorsHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  // Set CORS headers explicitly for maximum compatibility
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header(
+    'Access-Control-Allow-Methods',
+    'GET,PUT,POST,DELETE,PATCH,OPTIONS,HEAD'
+  );
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma, Expires, X-HTTP-Method-Override'
+  );
+  res.header(
+    'Access-Control-Expose-Headers',
+    'Authorization, X-Total-Count, X-Pagination-Pages, X-Pagination-Limit'
+  );
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
+
+  next();
+};
+
 // Security headers middleware
 export const securityHeaders = helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com'],
-      scriptSrc: ["'self'"],
-    },
-  },
+  contentSecurityPolicy:
+    config.nodeEnv === 'development'
+      ? false
+      : {
+          directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: [
+              "'self'",
+              "'unsafe-inline'",
+              'https://fonts.googleapis.com',
+            ],
+            fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+            imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com'],
+            scriptSrc: ["'self'"],
+          },
+        },
   crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
 });
 
 // Rate limiting middleware
 export const createRateLimiter = (windowMs?: number, max?: number) => {
+  // Skip rate limiting in development environment
+  if (config.nodeEnv === 'development') {
+    return (req: Request, res: Response, next: NextFunction) => {
+      next();
+    };
+  }
+
   return rateLimit({
     windowMs: windowMs || config.rateLimitWindowMs,
     max: max || config.rateLimitMaxRequests,
@@ -129,35 +175,31 @@ export const securityLogger = (
   next();
 };
 
-// CORS configuration
+// CORS configuration - Completely open for development
 export const corsConfig = {
-  origin: (
-    origin: string | undefined,
-    callback: (err: Error | null, allow?: boolean) => void
-  ) => {
-    // Allow requests with no origin (mobile apps, etc.)
-    if (!origin) return callback(null, true);
-
-    if (config.corsOrigin === '*') {
-      return callback(null, true);
-    }
-
-    const allowedOrigins = config.corsOrigin.split(',');
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      logger.warn(`CORS blocked request from origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true, // Allow all origins
   credentials: true,
   optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
   allowedHeaders: [
     'Content-Type',
     'Authorization',
     'X-Requested-With',
     'Accept',
     'Origin',
+    'Cache-Control',
+    'X-File-Name',
+    'X-HTTP-Method-Override',
+    'Access-Control-Allow-Origin',
+    'Access-Control-Allow-Headers',
+    'Access-Control-Allow-Methods',
+    'Access-Control-Allow-Credentials',
+    '*',
+  ],
+  exposedHeaders: [
+    'Authorization',
+    'X-Total-Count',
+    'X-Pagination-Pages',
+    'X-Pagination-Limit',
   ],
 };
