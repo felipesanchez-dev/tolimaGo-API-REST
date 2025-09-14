@@ -273,4 +273,266 @@ export class UserService {
       throw new AppError('Failed to delete user', 500);
     }
   }
+
+  /**
+   * Change user password
+   */
+  async changePassword(
+    userId: string, 
+    currentPassword: string, 
+    newPassword: string
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const user = await User.findById(userId).select('+password');
+      if (!user) {
+        throw new AppError('User not found', 404);
+      }
+
+      // Verify current password (plain text comparison)
+      if (user.password !== currentPassword) {
+        throw new AppError('Current password is incorrect', 400);
+      }
+
+      // Update password
+      await User.findByIdAndUpdate(userId, { password: newPassword });
+      
+      logger.info(`Password changed for user: ${user.email}`);
+      
+      return {
+        success: true,
+        message: 'Password changed successfully'
+      };
+    } catch (error: any) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      logger.error(`Change password error: ${error.message}`);
+      throw new AppError('Failed to change password', 500);
+    }
+  }
+
+  /**
+   * Update user preferences
+   */
+  async updatePreferences(userId: string, preferences: any): Promise<any> {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new AppError('User not found', 404);
+      }
+
+      const updatedPreferences = {
+        ...user.preferences,
+        ...(preferences.language && { language: preferences.language }),
+        ...(preferences.currency && { currency: preferences.currency }),
+        notifications: {
+          ...user.preferences.notifications,
+          ...(preferences.emailNotifications !== undefined && { 
+            email: preferences.emailNotifications 
+          }),
+          ...(preferences.pushNotifications !== undefined && { 
+            push: preferences.pushNotifications 
+          }),
+          ...(preferences.smsNotifications !== undefined && { 
+            sms: preferences.smsNotifications 
+          }),
+        }
+      };
+
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { preferences: updatedPreferences },
+        { new: true }
+      );
+
+      logger.info(`Preferences updated for user: ${user.email}`);
+
+      return {
+        success: true,
+        message: 'Preferences updated successfully',
+        data: {
+          preferences: updatedUser?.preferences
+        }
+      };
+    } catch (error: any) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      logger.error(`Update preferences error: ${error.message}`);
+      throw new AppError('Failed to update preferences', 500);
+    }
+  }
+
+  /**
+   * Add destination to favorites
+   */
+  async addFavorite(
+    userId: string, 
+    destinationId: string, 
+    destinationType?: string, 
+    notes?: string
+  ): Promise<any> {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new AppError('User not found', 404);
+      }
+
+      // Check if already in favorites
+      const existingFavorite = user.favoriteDestinations?.find(
+        (fav: any) => fav.destinationId === destinationId
+      );
+
+      if (existingFavorite) {
+        throw new AppError('Destination already in favorites', 400);
+      }
+
+      const newFavorite = {
+        destinationId,
+        destinationType: destinationType || 'unknown',
+        notes: notes || '',
+        addedAt: new Date()
+      };
+
+      await User.findByIdAndUpdate(userId, {
+        $push: { favoriteDestinations: newFavorite }
+      });
+
+      logger.info(`Added favorite destination for user: ${user.email}`);
+
+      return {
+        success: true,
+        message: 'Destination added to favorites',
+        data: { favorite: newFavorite }
+      };
+    } catch (error: any) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      logger.error(`Add favorite error: ${error.message}`);
+      throw new AppError('Failed to add favorite', 500);
+    }
+  }
+
+  /**
+   * Remove destination from favorites
+   */
+  async removeFavorite(userId: string, destinationId: string): Promise<any> {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new AppError('User not found', 404);
+      }
+
+      await User.findByIdAndUpdate(userId, {
+        $pull: { favoriteDestinations: { destinationId } }
+      });
+
+      logger.info(`Removed favorite destination for user: ${user.email}`);
+
+      return {
+        success: true,
+        message: 'Destination removed from favorites'
+      };
+    } catch (error: any) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      logger.error(`Remove favorite error: ${error.message}`);
+      throw new AppError('Failed to remove favorite', 500);
+    }
+  }
+
+  /**
+   * Get user favorites
+   */
+  async getFavorites(userId: string): Promise<any> {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new AppError('User not found', 404);
+      }
+
+      return {
+        success: true,
+        message: 'Favorites retrieved successfully',
+        data: {
+          favorites: user.favoriteDestinations || []
+        }
+      };
+    } catch (error: any) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      logger.error(`Get favorites error: ${error.message}`);
+      throw new AppError('Failed to retrieve favorites', 500);
+    }
+  }
+
+  /**
+   * Update user avatar
+   */
+  async updateAvatar(userId: string, avatarUrl: string): Promise<any> {
+    try {
+      const user = await User.findByIdAndUpdate(
+        userId,
+        { avatar: avatarUrl },
+        { new: true }
+      ).select('-password -refreshToken');
+
+      if (!user) {
+        throw new AppError('User not found', 404);
+      }
+
+      logger.info(`Avatar updated for user: ${user.email}`);
+
+      return {
+        success: true,
+        message: 'Avatar updated successfully',
+        data: {
+          avatar: user.avatar
+        }
+      };
+    } catch (error: any) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      logger.error(`Update avatar error: ${error.message}`);
+      throw new AppError('Failed to update avatar', 500);
+    }
+  }
+
+  /**
+   * Get user statistics
+   */
+  async getUserStats(userId: string): Promise<any> {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new AppError('User not found', 404);
+      }
+
+      // Mock statistics for now (will be real when other modules are implemented)
+      const stats = {
+        totalBookings: 0, // From bookings module
+        totalReviews: 0, // From reviews module  
+        favoritesCount: user.favoriteDestinations?.length || 0,
+        memberSince: user.createdAt || new Date(),
+        lastActivity: user.lastLogin || user.updatedAt || new Date(),
+        planningHistory: 0 // From plans module
+      };
+
+      return {
+        success: true,
+        message: 'User statistics retrieved successfully',
+        data: { stats }
+      };
+    } catch (error: any) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      logger.error(`Get user stats error: ${error.message}`);
+      throw new AppError('Failed to retrieve user statistics', 500);
+    }
+  }
 }

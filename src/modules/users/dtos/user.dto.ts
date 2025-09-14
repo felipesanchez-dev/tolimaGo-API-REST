@@ -190,3 +190,113 @@ export interface DeleteUserResponseDto {
     deletedUserId: string;
   };
 }
+
+// Password Management DTOs
+export class ChangePasswordDto {
+  @IsString()
+  @MinLength(3, { message: 'Current password is required' })
+  currentPassword!: string;
+
+  @IsString()
+  @MinLength(3, { message: 'New password must be at least 3 characters' })
+  newPassword!: string;
+
+  @IsString()
+  @MinLength(3, { message: 'Password confirmation is required' })
+  confirmPassword!: string;
+}
+
+// Preferences DTOs
+export class UpdatePreferencesDto {
+  @IsOptional()
+  @IsString()
+  language?: string;
+
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  emailNotifications?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  pushNotifications?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  smsNotifications?: boolean;
+}
+
+// Favorites DTOs
+export class AddFavoriteDto {
+  @IsString()
+  @MinLength(1, { message: 'Destination ID is required' })
+  destinationId!: string;
+
+  @IsOptional()
+  @IsString()
+  destinationType?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+// Avatar DTO
+export class UpdateAvatarDto {
+  @IsUrl({}, { message: 'Avatar must be a valid URL' })
+  avatar!: string;
+}
+
+// Response DTOs
+export interface ChangePasswordResponseDto {
+  success: boolean;
+  message: string;
+}
+
+export interface UpdatePreferencesResponseDto {
+  success: boolean;
+  message: string;
+  data: {
+    preferences: {
+      language: string;
+      currency: string;
+      notifications: {
+        email: boolean;
+        push: boolean;
+        sms: boolean;
+      };
+    };
+  };
+}
+
+export interface FavoritesResponseDto {
+  success: boolean;
+  message: string;
+  data: {
+    favorites: Array<{
+      id: string;
+      destinationId: string;
+      destinationType: string;
+      notes?: string;
+      addedAt: Date;
+    }>;
+  };
+}
+
+export interface UserStatsResponseDto {
+  success: boolean;
+  message: string;
+  data: {
+    stats: {
+      totalBookings: number;
+      totalReviews: number;
+      favoritesCount: number;
+      memberSince: Date;
+      lastActivity: Date;
+      planningHistory: number;
+    };
+  };
+}

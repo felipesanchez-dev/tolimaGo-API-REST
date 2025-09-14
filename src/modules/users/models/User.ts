@@ -35,6 +35,12 @@ export interface IUser extends IBaseEntity {
     twitter?: string;
     website?: string;
   };
+  favoriteDestinations?: Array<{
+    destinationId: string;
+    destinationType: string;
+    notes?: string;
+    addedAt: Date;
+  }>;
 }
 
 export interface IUserDocument extends Omit<IUser, '_id'>, Document {
@@ -180,6 +186,24 @@ const userSchema = new Schema<IUserDocument>(
       twitter: String,
       website: String,
     },
+    favoriteDestinations: [{
+      destinationId: {
+        type: String,
+        required: true,
+      },
+      destinationType: {
+        type: String,
+        default: 'unknown',
+      },
+      notes: {
+        type: String,
+        default: '',
+      },
+      addedAt: {
+        type: Date,
+        default: Date.now,
+      },
+    }],
   },
   {
     timestamps: true,

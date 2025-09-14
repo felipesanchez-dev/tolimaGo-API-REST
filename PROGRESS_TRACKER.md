@@ -16,14 +16,17 @@
 - [x] 3. Implementar configuración base y conexión DB ✅ 
 - [x] 4. Crear modelos de datos MongoDB ✅
 
+### ✅ COMPLETADAS RECIENTEMENTE
+- [x] 5. Implementar sistema de autenticación (JWT, DTOs, middleware) ✅
+- [x] 6. Implementar módulo de usuarios (12 endpoints funcionales) ✅
+
 ### 🚧 EN PROGRESO
-- [⏳] 5. Implementar sistema de autenticación (JWT, DTOs, middleware)
+_Ninguna tarea en progreso actualmente_
 
 ### ❌ BLOQUEADAS/ERRORES
 _Sin bloqueos actuales_
 
 ### ⏳ PENDIENTES
-- [ ] 6. Implementar módulo de usuarios
 - [ ] 7. Implementar módulo de planes
 - [ ] 8. Implementar módulo de empresas
 - [ ] 9. Implementar sistema de reservas
