@@ -48,4 +48,17 @@ router.get('/me', authMiddleware.authenticate, authController.me);
  */
 router.post('/verify-token', authController.verifyToken);
 
+/**
+ * @route   POST /api/v1/auth/reset-password
+ * @desc    TEMPORAL: Reset user password (for debugging)
+ * @access  Public
+ */
+router.post('/reset-password', authController.resetPassword);
+
+/**
+ * @route   DELETE /api/v1/auth/clear-users
+ * @desc    TEMPORAL: Clear all users (for debugging)
+ * @access  Public
+ */
+
 export { router as authRoutes };

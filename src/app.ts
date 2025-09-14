@@ -22,6 +22,7 @@ import {
   corsConfig,
 } from './core/middleware/security';
 import { authRoutes } from './modules/auth/routes/auth.routes';
+import { userRoutes } from './modules/users/routes';
 
 class App {
   public app: express.Application;
@@ -114,8 +115,8 @@ class App {
     // Authentication routes
     this.app.use('/api/v1/auth', authRoutes);
     
-    // TODO: Add other module routes here
-    // this.app.use('/api/v1/users', userRoutes);
+    // User routes
+    this.app.use('/api/v1/users', userRoutes);
     // this.app.use('/api/v1/plans', planRoutes);
     // this.app.use('/api/v1/business', businessRoutes);
     // this.app.use('/api/v1/bookings', bookingRoutes);

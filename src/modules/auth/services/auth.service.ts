@@ -1,4 +1,3 @@
-import bcrypt from 'bcrypt';
 import { User } from '../../users/models/User';
 import {
   RegisterDto,
@@ -25,17 +24,13 @@ export class AuthService {
         throw new AppError('User with this email already exists', 409);
       }
 
-      // Hash password
-      const hashedPassword = await bcrypt.hash(
-        registerDto.password,
-        config.auth.bcryptRounds
-      );
+      // Store password as plain text (for development)
 
       // Create user
       const user = await User.create({
         name: registerDto.name,
         email: registerDto.email,
-        password: hashedPassword,
+        password: registerDto.password,
         phone: registerDto.phone,
         city: registerDto.city || 'Ibagué',
         isResident: registerDto.isResident || false,
@@ -103,6 +98,7 @@ export class AuthService {
       const user = await User.findOne({ email: loginDto.email }).select(
         '+password'
       );
+
       if (!user) {
         throw new AppError('Invalid email or password', 401);
       }
@@ -112,11 +108,8 @@ export class AuthService {
         throw new AppError('Account is deactivated. Contact support.', 403);
       }
 
-      // Verify password
-      const isPasswordValid = await bcrypt.compare(
-        loginDto.password,
-        user.password
-      );
+      const isPasswordValid = loginDto.password === user.password;
+
       if (!isPasswordValid) {
         throw new AppError('Invalid email or password', 401);
       }
@@ -164,6 +157,7 @@ export class AuthService {
     try {
       // Simple token validation (extract user ID from temp token)
       const parts = refreshToken.split('_');
+
       if (parts.length !== 4 || parts[0] !== 'temp' || parts[1] !== 'refresh') {
         throw new AppError('Invalid refresh token', 401);
       }
@@ -182,8 +176,6 @@ export class AuthService {
         refreshToken: `temp_refresh_${user._id.toString()}_${Date.now()}`,
         expiresIn: config.auth.jwtExpire,
       };
-
-      logger.info(`Token refreshed for user: ${user.email}`);
 
       return {
         success: true,
@@ -277,6 +269,32 @@ export class AuthService {
     } catch (error) {
       logger.error('Token verification error:', error);
       throw new AppError('Invalid token', 401);
+    }
+  }
+
+  /**
+   * TEMPORAL: Reset user password (for debugging)
+   */
+  async resetPassword(
+    email: string,
+    newPassword: string
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const user = await User.findOne({ email });
+      if (!user) {
+        throw new AppError('User not found', 404);
+      }
+
+      // Update password in DB (plain text)
+      await User.findByIdAndUpdate(user._id, { password: newPassword });
+
+      return {
+        success: true,
+        message: 'Password reset successfully',
+      };
+    } catch (error: any) {
+      logger.error(`Reset password error: ${error.message}`);
+      throw error;
     }
   }
 }

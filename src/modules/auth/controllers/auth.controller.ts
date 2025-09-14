@@ -202,4 +202,32 @@ export class AuthController {
       next(error);
     }
   };
+
+  /**
+   * TEMPORAL: Reset password endpoint (for debugging)
+   */
+  resetPassword = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { email, newPassword } = req.body;
+
+      if (!email || !newPassword) {
+        res.status(400).json({
+          success: false,
+          message: 'Email and newPassword are required',
+        });
+        return;
+      }
+
+      const result = await this.authService.resetPassword(email, newPassword);
+
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
 }

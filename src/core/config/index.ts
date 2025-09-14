@@ -14,7 +14,6 @@ interface AppConfig {
     jwtRefreshSecret: string;
     jwtExpire: string;
     jwtRefreshExpire: string;
-    bcryptRounds: number;
   };
   rateLimitWindowMs: number;
   rateLimitMaxRequests: number;
@@ -81,7 +80,6 @@ export const config: AppConfig = {
     jwtRefreshSecret: validateEnvVar('JWT_REFRESH_SECRET'),
     jwtExpire: process.env.JWT_EXPIRE || '15m',
     jwtRefreshExpire: process.env.JWT_REFRESH_EXPIRE || '7d',
-    bcryptRounds: parseNumber(process.env.BCRYPT_ROUNDS, 12),
   },
   rateLimitWindowMs: parseNumber(process.env.RATE_LIMIT_WINDOW_MS, 900000), // 15 minutes
   rateLimitMaxRequests: parseNumber(process.env.RATE_LIMIT_MAX_REQUESTS, 100),

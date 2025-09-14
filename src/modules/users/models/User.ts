@@ -1,5 +1,4 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import bcrypt from 'bcryptjs';
 import { UserRole, IBaseEntity } from '../../../core/interfaces';
 
 export interface IUser extends IBaseEntity {
@@ -39,7 +38,6 @@ export interface IUser extends IBaseEntity {
 }
 
 export interface IUserDocument extends Omit<IUser, '_id'>, Document {
-  comparePassword(candidatePassword: string): Promise<boolean>;
   generatePasswordResetToken(): string;
   generateEmailVerificationToken(): string;
   isPasswordResetTokenValid(): boolean;
@@ -72,7 +70,7 @@ const userSchema = new Schema<IUserDocument>(
     password: {
       type: String,
       required: [true, 'Password is required'],
-      minlength: [8, 'Password must be at least 8 characters'],
+      minlength: [3, 'Password must be at least 3 characters'],
       select: false,
     },
     role: {
@@ -196,23 +194,7 @@ userSchema.index({ city: 1 });
 userSchema.index({ isActive: 1 });
 userSchema.index({ createdAt: -1 });
 
-// Hash password before saving
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
-  try {
-    const saltRounds = 12;
-    this.password = await bcrypt.hash(this.password, saltRounds);
-    next();
-  } catch (error) {
-    next(error as Error);
-  }
-});
-
-// Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
-  return bcrypt.compare(candidatePassword, this.password);
-};
+// Password is stored as plain text for development simplicity
 
 // Generate password reset token
 userSchema.methods.generatePasswordResetToken = function(): string {

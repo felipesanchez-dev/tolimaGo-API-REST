@@ -6,7 +6,6 @@ import {
   IsEnum,
   MinLength,
   MaxLength,
-  IsStrongPassword,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { UserRole } from '../../../core/interfaces/User';
@@ -22,19 +21,8 @@ export class RegisterDto {
   @Transform(({ value }: { value: string }) => value?.toLowerCase().trim())
   email!: string;
 
-  @IsStrongPassword(
-    {
-      minLength: 8,
-      minLowercase: 1,
-      minUppercase: 1,
-      minNumbers: 1,
-      minSymbols: 0,
-    },
-    {
-      message:
-        'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number',
-    }
-  )
+  @IsString()
+  @MinLength(3, { message: 'Password must be at least 3 characters long' })
   password!: string;
 
   @IsOptional()
